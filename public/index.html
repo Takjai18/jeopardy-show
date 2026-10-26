@@ -1,0 +1,1955 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>🎯 智奪風雲 Jeopardy! | 團契破冰問答遊戲</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+  <!-- QR Code Generator Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --game-pink-bg: #F08CAE;
+      --game-pink-btn: #E63E7A;
+      --game-yellow-bg: #F3C242;
+      --game-brown-text: #4A3222;
+      --game-orange-bg: #EA6A00;
+      --game-blue-bg: #1EA1E8;
+      --game-blue-tag: #0D74B8;
+      --game-green-bg: #5CB346;
+      --game-taupe-bg: #916E57;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Noto Sans TC', 'PingFang HK', 'Microsoft JhengHei', sans-serif;
+      background-color: var(--game-pink-bg);
+      color: var(--game-brown-text);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .dashed-divider {
+      border-top: 6px dashed rgba(255, 255, 255, 0.85);
+    }
+
+    .section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1.6rem;
+      border-radius: 9999px;
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+      font-weight: 900;
+      letter-spacing: 0.03em;
+    }
+
+    .game-card {
+      background: #FFFFFF;
+      border-radius: 28px;
+      padding: 22px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.09);
+    }
+
+    .active-ring {
+      outline: 4px solid #FFFFFF;
+      outline-offset: 4px;
+    }
+
+    .pill-btn {
+      border-radius: 9999px;
+      font-weight: 800;
+      transition: all 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      cursor: pointer;
+    }
+    .pill-btn:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+    }
+    .pill-btn:active:not(:disabled) {
+      transform: translateY(1px) scale(0.98);
+    }
+    .pill-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .jeopardy-tile {
+      background: linear-gradient(180deg, #FFE066 0%, #F3C242 100%);
+      color: var(--game-brown-text);
+      border: 3px solid #FFFFFF;
+      border-radius: 20px;
+      box-shadow: 0 6px 0 rgba(74, 50, 34, 0.22), 0 8px 16px rgba(0,0,0,0.12);
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .jeopardy-tile:hover:not(.tile-used) {
+      transform: translateY(-4px) scale(1.03);
+      background: linear-gradient(180deg, #FFF099 0%, #FFD24C 100%);
+      box-shadow: 0 10px 0 rgba(74, 50, 34, 0.25), 0 12px 22px rgba(0,0,0,0.18);
+    }
+    .jeopardy-tile.tile-used {
+      background: rgba(255, 255, 255, 0.22);
+      color: rgba(255, 255, 255, 0.65);
+      border-color: rgba(255, 255, 255, 0.35);
+      box-shadow: none;
+      cursor: default;
+    }
+
+    @keyframes pulse-fast {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 62, 122, 0.7); }
+      50% { transform: scale(1.04); box-shadow: 0 0 0 22px rgba(230, 62, 122, 0); }
+    }
+    .buzzer-ready-anim {
+      animation: pulse-fast 1.3s infinite;
+    }
+
+    @keyframes pop-in {
+      0% { opacity: 0; transform: scale(0.88); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .modal-pop {
+      animation: pop-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="sticky top-0 z-40 bg-[#F08CAE]/95 backdrop-blur-md border-b-4 border-white/80 px-3 sm:px-6 py-3 shadow-sm">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <!-- Left Logo (Neutral Cross-Fellowship Branding) -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <span class="text-2xl sm:text-3xl filter drop-shadow">🎯</span>
+        <div>
+          <h1 class="text-lg sm:text-2xl font-black text-white drop-shadow-[0_2px_2px_rgba(74,50,34,0.35)] tracking-wide">
+            智奪風雲 Jeopardy!
+          </h1>
+          <div class="flex items-center gap-2 text-xs sm:text-sm font-bold text-[#4A3222] bg-white/90 px-2.5 py-0.5 rounded-full">
+            <span id="conn-dot" class="w-2.5 h-2.5 rounded-full bg-[#5CB346] inline-block"></span>
+            <span>房號：<strong id="nav-room-code" class="text-[#E63E7A] font-black tracking-wider">----</strong></span>
+            <span id="nav-conn-mode" class="text-[11px] text-[#0D74B8]">(本機/同步就緒)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Action Pills -->
+      <nav class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <button onclick="toggleRoleView()" id="role-switch-btn" class="pill-btn bg-[#0D74B8] text-white border-2 border-white px-3 py-1.5 text-xs sm:text-sm">
+          📱 切換手機搶答端
+        </button>
+        <button onclick="openModal('qr-modal')" class="pill-btn bg-white text-[#4A3222] border-2 border-white px-3 py-1.5 text-xs sm:text-sm">
+          📱 QR Code
+        </button>
+        <button onclick="openModal('rules-modal')" class="pill-btn bg-white text-[#4A3222] border-2 border-white px-3 py-1.5 text-xs sm:text-sm">
+          📖 規則
+        </button>
+        <button onclick="openModal('editor-modal')" class="pill-btn bg-white text-[#4A3222] border-2 border-white px-3 py-1.5 text-xs sm:text-sm">
+          ⚙️ 設定/題庫
+        </button>
+        <button onclick="openModal('host-modal')" class="pill-btn bg-[#4A3222] text-white border-2 border-white px-3 py-1.5 text-xs sm:text-sm">
+          🛠️ 主持後台
+        </button>
+        <button onclick="confirmResetGame()" class="pill-btn bg-white text-[#E63E7A] border-2 border-white px-3 py-1.5 text-xs sm:text-sm">
+          🔄 重開
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 1: HOST BIG SCREEN VIEW (大螢幕主持控場版面)                      -->
+  <!-- ===================================================================== -->
+  <main id="host-view" class="flex-1 flex flex-col">
+
+    <!-- SCOREBOARD & GAME MODE CONTROLS SECTION -->
+    <section class="bg-[#1EA1E8] py-5 px-3 sm:px-6 dashed-divider">
+      <div class="max-w-7xl mx-auto">
+        <!-- Top Control Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div class="section-badge bg-[#0D74B8] text-white text-sm sm:text-base">
+            <span>🏆</span>
+            <span>各組積分榜（撳組別可切換「👑 揀題權」）</span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Board Size Switch -->
+            <button onclick="toggleBoardSize()" id="board-size-btn" class="pill-btn bg-white text-[#4A3222] px-3.5 py-1.5 text-xs sm:text-sm border-2 border-white">
+              ⚡ 版面：4×4 破冰快閃 (16題)
+            </button>
+            <!-- Penalty Mode Switch -->
+            <button onclick="togglePenaltyMode()" id="penalty-mode-btn" class="pill-btn bg-[#5CB346] text-white px-3.5 py-1.5 text-xs sm:text-sm border-2 border-white">
+              😊 歡樂模式：答錯唔扣分
+            </button>
+            <!-- Trigger Final Jeopardy -->
+            <button onclick="startFinalJeopardy()" class="pill-btn bg-[#F3C242] text-[#4A3222] px-4 py-1.5 text-xs sm:text-sm border-2 border-white font-black">
+              🌟 進入 Final 終極一擊
+            </button>
+          </div>
+        </div>
+
+        <!-- Team Score Cards Grid -->
+        <div id="scoreboard-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <!-- Populated dynamically by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN JEOPARDY BOARD SECTION -->
+    <section class="bg-[#F08CAE] py-6 px-3 sm:px-6 dashed-divider flex-1">
+      <div class="max-w-7xl mx-auto">
+        <!-- Section Header Badge -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-5">
+          <div class="section-badge bg-[#E63E7A] text-white text-base sm:text-xl">
+            <span>🎯</span>
+            <span id="current-picker-banner">請【第 1 組】揀選類別與分數格！</span>
+          </div>
+          <div class="text-xs sm:text-sm font-bold bg-white/90 text-[#4A3222] px-4 py-1.5 rounded-full shadow-sm">
+            💡 提示：版面暗藏 <span id="dd-count-label" class="text-[#E63E7A] font-black">2</span> 格「⚡ Daily Double 雙倍押注」！
+          </div>
+        </div>
+
+        <!-- Jeopardy Board Container -->
+        <div class="bg-[#1EA1E8] p-3 sm:p-5 rounded-[32px] border-4 border-white shadow-xl overflow-x-auto">
+          <div id="jeopardy-board" class="grid gap-2.5 sm:gap-4 min-w-[640px]">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 2: PLAYER MOBILE BUZZER VIEW (團友手機搶答端 — 掃 QR Code 即入)   -->
+  <!-- ===================================================================== -->
+  <main id="player-view" class="hidden flex-1 flex flex-col bg-[#1EA1E8] px-4 py-5">
+    <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-between gap-4">
+
+      <!-- Top Player Team Selector Card -->
+      <div class="game-card !p-4 border-4 border-white">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-black bg-[#0D74B8] text-white px-3 py-1 rounded-full">
+            📱 團友手機搶答器
+          </span>
+          <span id="mobile-room-badge" class="text-xs font-black text-[#E63E7A]">
+            房號：----
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">揀選你嘅組別：</label>
+            <select id="mobile-team-select" onchange="updateMobilePlayerProfile()" class="w-full rounded-xl border-2 border-[#0D74B8] px-2.5 py-2 font-black text-sm text-[#4A3222] bg-amber-50">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">你嘅稱呼 (選填)：</label>
+            <input id="mobile-player-name" type="text" placeholder="例如：阿明" onchange="updateMobilePlayerProfile()" class="w-full rounded-xl border-2 border-gray-300 px-2.5 py-2 font-bold text-sm text-[#4A3222]" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between bg-[#F3C242]/30 rounded-xl px-3 py-2 text-sm font-black">
+          <span id="mobile-team-name-display">🔥 第 1 組</span>
+          <span id="mobile-team-score-display" class="text-lg text-[#E63E7A]">$0</span>
+        </div>
+      </div>
+
+      <!-- Center Giant Buzzer / Interactive Area -->
+      <div class="game-card flex-1 flex flex-col items-center justify-center text-center !p-6 border-4 border-white relative">
+        <div id="mobile-clue-Banner" class="text-xs sm:text-sm font-bold text-[#0D74B8] bg-blue-50 px-3 py-1.5 rounded-full mb-3">
+          請望住大螢幕題目，搶答開放時即撳下面大掣！
+        </div>
+
+        <!-- Giant Circular Buzzer Button -->
+        <button id="mobile-giant-buzzer" onclick="handleMobileBuzz()" class="w-56 h-56 sm:w-64 sm:h-64 rounded-full border-8 border-white shadow-2xl flex flex-col items-center justify-center gap-2 transition-all bg-[#E63E7A] text-white buzzer-ready-anim">
+          <span id="mobile-buzzer-icon" class="text-6xl">🔔</span>
+          <span id="mobile-buzzer-title" class="text-2xl font-black tracking-wide">立即搶答！</span>
+          <span id="mobile-buzzer-sub" class="text-xs font-bold opacity-90 px-4">撳我鎖定組別搶答權</span>
+        </button>
+
+        <!-- Mobile Multiple Choice Rescue Panel (Shown when Host enables 4-choice Hint) -->
+        <div id="mobile-mc-panel" class="hidden w-full mt-5 pt-4 border-t-2 border-dashed border-gray-200">
+          <p class="text-xs font-black text-[#EA6A00] mb-2">💡 主持已開啟 4 選 1 選擇題（可撳選項作答）：</p>
+          <div id="mobile-mc-grid" class="grid grid-cols-1 gap-2 text-left">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Mobile Final Jeopardy Secret Wager & Answer Box -->
+        <div id="mobile-final-panel" class="hidden w-full mt-4 pt-4 border-t-2 border-dashed border-gray-200 text-left">
+          <div class="bg-[#F3C242]/30 p-3 rounded-2xl mb-3">
+            <p class="text-sm font-black text-[#4A3222] mb-1">🌟 Final 終極一擊秘密押注 & 作答</p>
+            <p id="mobile-final-cat" class="text-xs font-bold text-[#E63E7A]">類別：載入中...</p>
+          </div>
+          <label class="block text-xs font-black mb-1">1. 輸入你嗰組嘅秘密押注分數 ($)：</label>
+          <input id="mobile-final-wager" type="number" min="0" step="50" value="200" class="w-full rounded-xl border-2 border-[#0D74B8] px-3 py-2 font-black text-base mb-3" />
+
+          <label class="block text-xs font-black mb-1">2. 輸入終極題目答案（開題後填寫）：</label>
+          <input id="mobile-final-answer" type="text" placeholder="輸入你哋嗰組嘅答案..." class="w-full rounded-xl border-2 border-[#E63E7A] px-3 py-2 font-bold text-base mb-3" />
+
+          <button onclick="submitMobileFinalJeopardy()" class="pill-btn w-full bg-[#5CB346] text-white py-3 text-base shadow-lg">
+            🔒 鎖定並傳送去主持台
+          </button>
+          <p id="mobile-final-status" class="text-xs font-bold text-center text-[#5CB346] mt-2 hidden">✅ 已成功傳送俾主持！</p>
+        </div>
+      </div>
+
+      <!-- Bottom Quick Switch Back to Host View (if testing on same device) -->
+      <div class="text-center">
+        <button onclick="toggleRoleView()" class="text-xs font-bold text-white/90 underline">
+          🖥️ 返回大螢幕主持視角
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-[#916E57] text-white py-4 px-4 dashed-divider text-center text-xs sm:text-sm font-bold">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>🎯 智奪風雲 Jeopardy! — 團契破冰互動問答系統</span>
+      <span>支援快捷鍵：題目畫面按 <kbd class="bg-white/20 px-1.5 py-0.5 rounded">Space</kbd> 開放搶答、按數字鍵 <kbd class="bg-white/20 px-1.5 py-0.5 rounded">1</kbd>-<kbd class="bg-white/20 px-1.5 py-0.5 rounded">6</kbd> 指定組別搶答</span>
+    </div>
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: ACTIVE CLUE & BUZZER MODAL (題目揭曉、Daily Double 與搶答台)   -->
+  <!-- ===================================================================== -->
+  <div id="clue-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="game-card max-w-4xl w-full border-4 border-white modal-pop !p-0 overflow-hidden">
+
+      <!-- Modal Top Header -->
+      <div id="clue-modal-header" class="bg-[#0D74B8] text-white px-5 py-4 flex flex-wrap items-center justify-between gap-2 border-b-4 border-white">
+        <div class="flex items-center gap-2">
+          <span id="clue-cat-badge" class="bg-white text-[#0D74B8] font-black px-3.5 py-1 rounded-full text-sm sm:text-base">
+            類別名稱
+          </span>
+          <span id="clue-val-badge" class="bg-[#F3C242] text-[#4A3222] font-black px-3.5 py-1 rounded-full text-sm sm:text-base">
+            $200
+          </span>
+          <span id="clue-dd-badge" class="hidden bg-[#EA6A00] text-white font-black px-3.5 py-1 rounded-full text-sm sm:text-base animate-bounce">
+            ⚡ DAILY DOUBLE 雙倍押注！
+          </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="bg-white/20 px-3.5 py-1 rounded-full font-black text-sm sm:text-base flex items-center gap-1.5">
+            <span>⏱️</span>
+            <span id="clue-timer-text">15s</span>
+          </div>
+          <button onclick="closeClueModalWithoutUsed()" class="pill-btn bg-white/20 hover:bg-white/30 text-white px-3 py-1 text-xs">
+            ✕ 暫時返回
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP A: DAILY DOUBLE WAGER PANEL (Only shown before revealing a DD clue) -->
+      <div id="dd-wager-panel" class="hidden p-6 sm:p-10 bg-gradient-to-b from-[#F3C242] to-[#FFE885] text-center">
+        <div class="text-5xl sm:text-6xl mb-3">⚡🎰⚡</div>
+        <h2 class="text-2xl sm:text-4xl font-black text-[#4A3222] mb-2">
+          恭喜揀中「Daily Double 每日雙倍」！
+        </h2>
+        <p id="dd-team-prompt" class="text-base sm:text-xl font-bold text-[#E63E7A] mb-6">
+          只限【第 1 組】作答！請喺睇題目之前決定押注幾多分：
+        </p>
+
+        <div class="max-w-md mx-auto bg-white p-5 rounded-3xl shadow-lg border-4 border-[#4A3222]">
+          <label class="block text-sm font-black text-gray-600 mb-2">
+            輸入押注分數（可賭 $100 至 <span id="dd-max-wager">$1000</span>）：
+          </label>
+          <div class="flex items-center justify-center gap-3 mb-4">
+            <input id="dd-wager-input" type="number" step="100" min="100" value="400" class="w-40 text-center text-3xl font-black text-[#E63E7A] border-4 border-[#0D74B8] rounded-2xl py-2" />
+            <button onclick="setMaxDDWager()" class="pill-btn bg-[#EA6A00] text-white px-4 py-3 text-sm">
+              🔥 All-In 賭晒！
+            </button>
+          </div>
+          <button onclick="confirmDDWagerAndShowClue()" class="pill-btn w-full bg-[#E63E7A] text-white py-3.5 text-lg shadow-md">
+            🔒 鎖定押注並揭曉題目！
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP B: MAIN CLUE & BUZZER BODY -->
+      <div id="clue-main-body" class="p-6 sm:p-8 bg-white">
+
+        <!-- Clue Question Text -->
+        <div class="bg-[#1EA1E8]/10 border-4 border-[#1EA1E8] rounded-3xl p-6 sm:p-8 mb-6 text-center">
+          <p id="clue-question-text" class="text-2xl sm:text-4xl font-black text-[#4A3222] leading-snug">
+            題目內容載入中...
+          </p>
+
+          <!-- Rescue 4-Choice Multiple Choice Options (Toggled by Host) -->
+          <div id="clue-mc-container" class="hidden mt-6 pt-5 border-t-2 border-dashed border-[#1EA1E8]/40 grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Revealed Standard Answer Box -->
+          <div id="clue-answer-box" class="hidden mt-6 bg-[#5CB346] text-white p-4 rounded-2xl shadow-md">
+            <div class="text-xs font-bold uppercase tracking-wider opacity-90">✅ 標準答案</div>
+            <div id="clue-answer-text" class="text-xl sm:text-3xl font-black mt-1">答案內容</div>
+          </div>
+        </div>
+
+        <!-- LIVE BUZZER STATUS & TEAM SELECTION BAR -->
+        <div class="bg-amber-50 border-2 border-[#F3C242] rounded-2xl p-4 mb-6">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🔔</span>
+              <span id="buzzer-status-label" class="font-black text-base sm:text-lg text-[#4A3222]">
+                搶答台狀態：等待搶答（手機撳掣 或 主持撳下面組別）
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="openBuzzerForClue()" class="pill-btn bg-[#5CB346] text-white px-3.5 py-1.5 text-xs sm:text-sm">
+                🔔 重新開放搶答 / 重置計時
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Team Buzz Buttons (Allows Host to click or press 1-6, and shows mobile buzz ranking) -->
+          <div id="clue-team-buzz-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- HOST ACTION & JUDGING FOOTER BUTTONS -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t-2 border-gray-100">
+          <!-- Left Lifelines -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="toggleClueMC()" id="btn-toggle-mc" class="pill-btn bg-[#EA6A00] text-white px-4 py-2.5 text-sm">
+              💡 救場：顯示 4 選 1 選擇題
+            </button>
+            <button onclick="toggleRevealAnswer()" id="btn-reveal-ans" class="pill-btn bg-[#0D74B8] text-white px-4 py-2.5 text-sm">
+              👀 揭曉標準答案
+            </button>
+          </div>
+
+          <!-- Right Scoring Verdict -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="judgeActiveTeam(true)" id="btn-judge-correct" class="pill-btn bg-[#5CB346] text-white px-5 py-2.5 text-sm sm:text-base shadow-md">
+              ✅ 答啱加分！
+            </button>
+            <button onclick="judgeActiveTeam(false)" id="btn-judge-wrong" class="pill-btn bg-[#E63E7A] text-white px-5 py-2.5 text-sm sm:text-base shadow-md">
+              ❌ 答錯（開放補答）
+            </button>
+            <button onclick="markClueFinishedAndClose()" class="pill-btn bg-gray-200 text-[#4A3222] px-4 py-2.5 text-sm">
+              ⏭️ 無人識答 (完題)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: FINAL JEOPARDY MODAL (終極一擊：秘密押注 + 大翻盤)              -->
+  <!-- ===================================================================== -->
+  <div id="final-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="game-card max-w-5xl w-full border-4 border-white modal-pop !p-0 overflow-hidden">
+      <div class="bg-gradient-to-r from-[#E63E7A] via-[#EA6A00] to-[#F3C242] text-white px-6 py-4 flex items-center justify-between border-b-4 border-white">
+        <div class="flex items-center gap-2">
+          <span class="text-3xl">🌟</span>
+          <h2 class="text-xl sm:text-2xl font-black">FINAL JEOPARDY 終極一擊大翻盤！</h2>
+        </div>
+        <button onclick="closeModal('final-modal')" class="pill-btn bg-white/20 text-white px-3 py-1 text-xs">
+          ✕ 關閉
+        </button>
+      </div>
+
+      <div class="p-6 sm:p-8 bg-white space-y-6 max-h-[82vh] overflow-y-auto">
+        <!-- Step 1: Category Banner -->
+        <div class="bg-[#1EA1E8] text-white p-5 rounded-3xl border-4 border-white shadow-md text-center">
+          <div class="text-xs sm:text-sm font-black uppercase tracking-widest opacity-90 mb-1">
+            STEP 1：終極主題類別（請各組先決定押注分數！）
+          </div>
+          <div id="final-category-title" class="text-2xl sm:text-4xl font-black">
+            🌟 聖經與人生大逆轉
+          </div>
+        </div>
+
+        <!-- Step 2: Reveal Final Clue Button & Box -->
+        <div class="text-center">
+          <button id="btn-reveal-final-clue" onclick="revealFinalClueOnScreen()" class="pill-btn bg-[#E63E7A] text-white px-6 py-3 text-base sm:text-lg shadow-lg">
+            🔓 各組已鎖定押注！撳此揭曉終極題目 & 啟動 30 秒倒數
+          </button>
+
+          <div id="final-clue-box" class="hidden mt-4 bg-amber-50 border-4 border-[#F3C242] rounded-3xl p-6 text-center">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-black bg-[#EA6A00] text-white px-3 py-1 rounded-full">終極題目</span>
+              <span id="final-timer-badge" class="text-lg font-black text-[#E63E7A]">⏱️ 30s</span>
+            </div>
+            <p id="final-question-text" class="text-2xl sm:text-3xl font-black text-[#4A3222] my-3">
+              終極題目內容
+            </p>
+            <button onclick="document.getElementById('final-answer-reveal').classList.toggle('hidden')" class="pill-btn bg-[#0D74B8] text-white px-4 py-1.5 text-xs mt-2">
+              👀 顯示/隱藏終極標準答案
+            </button>
+            <div id="final-answer-reveal" class="hidden mt-3 bg-[#5CB346] text-white font-black text-xl p-3 rounded-2xl">
+              標準答案
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Team Wagers & Answers Table -->
+        <div>
+          <h3 class="font-black text-lg text-[#4A3222] mb-3">
+            📊 各組終極押注與作答結算（可由手機自動傳入，或由主持直接輸入）：
+          </h3>
+          <div id="final-teams-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Step 4: Show Podium Winner -->
+        <div class="text-center pt-3 border-t-2 border-gray-100">
+          <button onclick="showWinnerPodium()" class="pill-btn bg-[#F3C242] text-[#4A3222] border-2 border-[#4A3222] px-8 py-3.5 text-lg font-black shadow-xl">
+            🏆 公佈全場總冠軍頒獎台！
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 3: WINNER PODIUM MODAL (冠軍頒獎台)                              -->
+  <!-- ===================================================================== -->
+  <div id="podium-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="game-card max-w-2xl w-full bg-gradient-to-b from-[#F3C242] to-[#FFF3B0] border-4 border-white text-center modal-pop">
+      <div class="text-6xl mb-2">👑🎉🏆</div>
+      <h2 class="text-3xl sm:text-4xl font-black text-[#4A3222] mb-1">智奪風雲・榮譽榜</h2>
+      <p class="text-sm font-bold text-[#916E57] mb-6">多謝各位團友熱烈投入破冰挑戰！</p>
+
+      <div id="podium-rankings" class="space-y-3 mb-6 text-left">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-3">
+        <button onclick="closeModal('podium-modal')" class="pill-btn bg-white text-[#4A3222] px-6 py-2.5 text-sm">
+          返回版面
+        </button>
+        <button onclick="confirmResetGame()" class="pill-btn bg-[#E63E7A] text-white px-6 py-2.5 text-sm">
+          🔄 開新局再玩
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 4: QR CODE & ROOM CONNECTION MODAL (📱 QR Code 掃描連線)          -->
+  <!-- ===================================================================== -->
+  <div id="qr-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="game-card max-w-md w-full border-4 border-white text-center modal-pop">
+      <div class="flex items-center justify-between mb-3">
+        <span class="section-badge bg-[#1EA1E8] text-white text-sm !py-1 !px-3">📱 手機掃碼做搶答掣</span>
+        <button onclick="closeModal('qr-modal')" class="pill-btn bg-gray-100 text-gray-700 px-3 py-1 text-xs">✕ 關閉</button>
+      </div>
+
+      <p class="text-xs sm:text-sm font-bold text-gray-600 mb-3">
+        請每組派代表用手機相機掃描以下 QR Code，即刻進入「📱 團友手機搶答器」！
+      </p>
+
+      <!-- QR Code Canvas Container -->
+      <div id="qr-code-box" class="bg-white p-4 rounded-3xl border-4 border-[#1EA1E8] inline-block shadow-inner mb-3"></div>
+
+      <div class="bg-amber-50 border-2 border-[#F3C242] rounded-2xl p-3 mb-4">
+        <div class="text-xs font-bold text-gray-500">房間號碼 (Room PIN)</div>
+        <div id="qr-room-pin" class="text-3xl font-black text-[#E63E7A] tracking-widest">8824</div>
+        <div id="qr-url-text" class="text-[11px] text-gray-500 break-all mt-1"></div>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-2">
+        <button onclick="copyJoinLink()" class="pill-btn bg-[#0D74B8] text-white px-4 py-2 text-xs">
+          📋 複製參加連結
+        </button>
+        <button onclick="closeModal('qr-modal'); toggleRoleView();" class="pill-btn bg-[#E63E7A] text-white px-4 py-2 text-xs">
+          📱 喺呢部機預覽手機搶答端
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 5: RULES MODAL (📖 遊戲規則)                                    -->
+  <!-- ===================================================================== -->
+  <div id="rules-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="game-card max-w-2xl w-full border-4 border-white modal-pop max-h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <span class="section-badge bg-[#E63E7A] text-white text-base">📖 智奪風雲 Jeopardy! 團契破冰規則</span>
+        <button onclick="closeModal('rules-modal')" class="pill-btn bg-gray-100 text-gray-700 px-3 py-1 text-xs">✕ 關閉</button>
+      </div>
+
+      <div class="space-y-3 text-sm sm:text-base font-bold text-[#4A3222] leading-relaxed">
+        <div class="bg-pink-50 p-3.5 rounded-2xl border-l-8 border-[#E63E7A]">
+          <strong>1. 揀題與搶答：</strong><br>
+          擁有「👑 揀題權」嘅組別揀選「類別 + 分數格（$100–$500）」。題目揭曉後，全場各組可透過<strong>手機搶答掣</strong>或<strong>舉手搶答</strong>！答啱即可贏得該格分數，並獲得下一題揀題權。
+        </div>
+        <div class="bg-blue-50 p-3.5 rounded-2xl border-l-8 border-[#1EA1E8]">
+          <strong>2. 歡樂模式 vs 刺激模式：</strong><br>
+          預設為「😊 歡樂模式」（答錯唔扣分，並即刻開放俾其他組補答 Steal）；主持亦可隨時切換為「🔥 刺激模式」（答錯照扣該題分數）。
+        </div>
+        <div class="bg-amber-50 p-3.5 rounded-2xl border-l-8 border-[#F3C242]">
+          <strong>3. ⚡ Daily Double（每日雙倍）：</strong><br>
+          版面暗藏 1–2 格雙倍格！揀中嗰組獨享作答權，喺睇題目前可自由押注（最高可賭晒全組現有分數或版面最高分）！
+        </div>
+        <div class="bg-green-50 p-3.5 rounded-2xl border-l-8 border-[#5CB346]">
+          <strong>4. 💡 救場 4 選 1 選擇題 & 🌟 終極一擊：</strong><br>
+          遇到難題時，主持可撳「💡 顯示 4 選 1 選擇題」俾大家估；最後一關「Final 終極一擊」各組先秘密押注再答題，隨時一題反 Cup！
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 6: HOST GOD-MODE CONTROLS (🛠️ 主持後台)                         -->
+  <!-- ===================================================================== -->
+  <div id="host-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="game-card max-w-3xl w-full border-4 border-white modal-pop max-h-[88vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <span class="section-badge bg-[#4A3222] text-white text-base">🛠️ 主持後台 (God-Mode 控場面板)</span>
+        <button onclick="closeModal('host-modal')" class="pill-btn bg-gray-100 text-gray-700 px-3 py-1 text-xs">✕ 關閉</button>
+      </div>
+
+      <!-- Team Add / Remove & Score Override -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-black text-base text-[#4A3222]">👥 組別管理與手動改分（支援 2–6 組動態加減）</h3>
+          <div class="flex gap-2">
+            <button onclick="addNewTeam()" class="pill-btn bg-[#5CB346] text-white px-3 py-1 text-xs">➕ 新增組別</button>
+            <button onclick="removeLastTeam()" class="pill-btn bg-[#E63E7A] text-white px-3 py-1 text-xs">➖ 減少組別</button>
+          </div>
+        </div>
+        <div id="host-teams-editor" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Multiplayer Worker Endpoint Config -->
+      <div class="bg-blue-50 p-4 rounded-2xl border-2 border-[#1EA1E8] mb-5">
+        <h4 class="font-black text-sm text-[#0D74B8] mb-1">🌐 多機即時連線伺服器 (Cloudflare Worker WebSocket URL)</h4>
+        <p class="text-xs text-gray-600 mb-2">
+          留空會自動嘗試連接同域名或預設 Worker；即使未部署 Worker，同瀏覽器唔同分頁亦會透過 BroadcastChannel 自動同步！
+        </p>
+        <div class="flex gap-2">
+          <input id="worker-url-input" type="text" placeholder="wss://jeopardy-show.ymtwill.workers.dev" class="flex-1 rounded-xl border-2 border-gray-300 px-3 py-1.5 text-xs font-bold" />
+          <button onclick="saveWorkerUrlAndReconnect()" class="pill-btn bg-[#0D74B8] text-white px-4 py-1.5 text-xs">儲存並重連</button>
+        </div>
+      </div>
+
+      <!-- Quick Board Actions -->
+      <div class="flex flex-wrap justify-between gap-2 pt-3 border-t-2 border-gray-100">
+        <button onclick="unlockAllTiles()" class="pill-btn bg-[#EA6A00] text-white px-4 py-2 text-xs">
+          🔓 重置所有已答題目格（保留現有分數）
+        </button>
+        <button onclick="closeModal('host-modal'); showWinnerPodium();" class="pill-btn bg-[#F3C242] text-[#4A3222] px-4 py-2 text-xs">
+          🏆 直接跳去頒獎台結算
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 7: QUESTION BANK EDITOR & AI PROMPT (⚙️ 設定/題庫編輯器)          -->
+  <!-- ===================================================================== -->
+  <div id="editor-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="game-card max-w-4xl w-full border-4 border-white modal-pop max-h-[88vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <span class="section-badge bg-[#0D74B8] text-white text-base">⚙️ 題庫設定與 AI 快速出題工具</span>
+        <button onclick="closeModal('editor-modal')" class="pill-btn bg-gray-100 text-gray-700 px-3 py-1 text-xs">✕ 關閉</button>
+      </div>
+
+      <div class="bg-amber-50 border-2 border-[#F3C242] rounded-2xl p-4 mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h4 class="font-black text-sm text-[#4A3222]">🤖 籌委神器：一鍵複製 AI 出題 Prompt</h4>
+            <p class="text-xs text-gray-600">想為特別聚會（如聖誕、迎新、查經週）度身訂造題目？複製 Prompt 貼去 Gemini / ChatGPT 即出 JSON！</p>
+          </div>
+          <button onclick="copyAIPrompt()" class="pill-btn bg-[#E63E7A] text-white px-4 py-2 text-xs">
+            📋 複製 AI 出題 Prompt
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-xs font-black text-gray-600 mb-1">
+          直接編輯或貼上題庫 JSON（包含 5 個類別 × 5 題 + Final Jeopardy）：
+        </label>
+        <textarea id="bank-json-textarea" rows="11" class="w-full font-mono text-xs p-3 rounded-2xl border-2 border-gray-300 bg-gray-50 text-gray-800"></textarea>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex gap-2">
+          <button onclick="exportBankJSON()" class="pill-btn bg-gray-200 text-[#4A3222] px-4 py-2 text-xs">
+            ⬇️ 下載備份 .json
+          </button>
+          <button onclick="restoreDefaultBank()" class="pill-btn bg-gray-200 text-[#E63E7A] px-4 py-2 text-xs">
+            🔄 還原預設破冰題庫
+          </button>
+        </div>
+        <button onclick="saveCustomBankFromTextarea()" class="pill-btn bg-[#5CB346] text-white px-6 py-2.5 text-sm shadow-md">
+          💾 儲存並套用新題庫
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- CORE GAME ENGINE, AUDIO SYNTHESIZER & MULTIPLAYER SYNC SCRIPT         -->
+  <!-- ===================================================================== -->
+  <script>
+    /*************************************************************************
+     * 1. DEFAULT QUESTION BANK (跨團契通用：5 大破冰類別 × 5 個分數 + 終極題)
+     *************************************************************************/
+    const DEFAULT_QUESTION_BANK = {
+      finalJeopardy: {
+        category: "🌟 聖經與人生大逆轉",
+        q: "舊約聖經入面，邊一位人物曾經被親生哥哥賣去埃及做奴隸同坐監，但最後成為埃及宰相，仲對哥哥講：「從前你們的意思是要害我，但神的意思原是好的」？",
+        a: "約瑟 (Joseph)",
+        options: ["A. 摩西", "B. 約瑟", "C. 大衛", "D. 但以理"]
+      },
+      categories: [
+        {
+          title: "📖 聖經冷知識",
+          clues: [
+            { value: 100, q: "耶穌行的第一個神蹟，喺迦拿婚宴上將「水」變咗做乜嘢？", a: "酒（美酒）", options: ["A. 牛奶", "B. 蜜糖", "C. 酒（美酒）", "D. 橄欖油"] },
+            { value: 200, q: "舊約入面，少年大衛用機弦甩石打低巨人歌利亞，佢落溪邊總共執咗幾多粒光滑石仔？", a: "5 粒石仔", options: ["A. 1 粒", "B. 3 粒", "C. 5 粒", "D. 7 粒"] },
+            { value: 300, q: "全本聖經入面「最長嘅一章」同「最短嘅一章」都喺同一卷書，請問係邊一卷書？", a: "詩篇（第119篇最長、第117篇最短）", options: ["A. 創世記", "B. 詩篇", "C. 箴言", "D. 以賽亞書"] },
+            { value: 400, q: "新約使徒保羅原本叫掃羅，佢喺去邊個城市嘅路上遇見大光悔改信主？", a: "大馬士革 (Damascus)", options: ["A. 耶路撒冷", "B. 安提阿", "C. 大馬士革", "D. 羅馬"] },
+            { value: 500, q: "根據創世記記載，全人類歷史上最高壽嘅人「瑪土撒拉」，一共活咗幾多歲？", a: "969 歲", options: ["A. 777 歲", "B. 888 歲", "C. 930 歲", "D. 969 歲"] }
+          ]
+        },
+        {
+          title: "🇭🇰 香港地道生活",
+          clues: [
+            { value: 100, q: "喺香港茶餐廳落單，伙記寫「靚仔」同「靚女」，分別代表邊兩樣嘢食？", a: "靚仔＝白飯、靚女＝白粥", options: ["A. 白飯 同 白粥", "B. 凍檸茶 同 凍奶茶", "C. 菠蘿油 同 蛋撻", "D. 公仔麵 同 米粉"] },
+            { value: 200, q: "香港港鐵（MTR）咁多條路線入面，邊一條線嘅代表顏色係「紫色」？", a: "將軍澳綫", options: ["A. 東涌綫", "B. 將軍澳綫", "C. 屯馬綫", "D. 南港島綫"] },
+            { value: 300, q: "香港最高嘅山峰係「大帽山」（海拔 957 米），咁第二高嘅山峰又係邊座（位於大嶼山）？", a: "鳳凰山（海拔 934 米）", options: ["A. 大東山", "B. 獅子山", "C. 鳳凰山", "D. 飛鵝山"] },
+            { value: 400, q: "香港流通緊嘅港幣紙幣（公牛、紅衫魚、金牛等），面額由細到大共有邊 6 種面額？", a: "$10、$20、$50、$100、$500、$1000", options: ["A. $10、$20、$50、$100、$500、$1000", "B. $5、$10、$20、$50、$100、$500", "C. $10、$20、$50、$100、$200、$1000", "D. $20、$50、$100、$500、$1000、$2000"] },
+            { value: 500, q: "香港天文台掛「8號風球」總共有 4 個方向信號，請問係邊 4 個方向？", a: "西北、西南、東北、東南", options: ["A. 東、南、西、北", "B. 西北、西南、東北、東南", "C. 正北、正南、東北、西南", "D. 東北、西北、正東、正西"] }
+          ]
+        },
+        {
+          title: "🎬 影視與音樂",
+          clues: [
+            { value: 100, q: "動畫《多啦A夢》入面，大雄最鍾意食乜嘢？唔係，係多啦A夢最驚乜嘢動物先啱？", a: "老鼠", options: ["A. 曱甴", "B. 老鼠", "C. 蜘蛛", "D. 狗"] },
+            { value: 200, q: "宮崎駿經典動畫《千與千尋》入面，千尋嘅父母因為偷食咗神明嘅食物，變咗做邊種動物？", a: "豬", options: ["A. 牛", "B. 羊", "C. 豬", "D. 青蛙"] },
+            { value: 300, q: "古典音樂入面，「樂聖」貝多芬嘅《第五號交響曲》（「登登登凳～」），又常被稱為什麼交響曲？", a: "《命運交響曲》", options: ["A. 《田園交響曲》", "B. 《英雄交響曲》", "C. 《命運交響曲》", "D. 《合唱交響曲》"] },
+            { value: 400, q: "Pixar 動畫《玩轉腦朋友 (Inside Out)》第一集入面，主角韋莉腦海最初有邊 5 位情緒專員？", a: "阿樂、阿愁、阿燥、阿憎、阿驚", options: ["A. 阿樂、阿愁、阿燥、阿憎、阿驚", "B. 阿樂、阿愁、阿焦、阿羨、阿尷", "C. 阿樂、阿愁、阿怒、阿愛、阿勇", "D. 阿樂、阿愁、阿悶、阿驚、阿羞"] },
+            { value: 500, q: "著名讚美詩《奇異恩典 (Amazing Grace)》嘅作詞人 John Newton，悔改信主之前曾經從事咩職業？", a: "黑奴船船長／水手", options: ["A. 皇室律師", "B. 黑奴船船長／水手", "C. 銀行家", "D. 劇院演員"] }
+          ]
+        },
+        {
+          title: "😂 腦筋急轉彎",
+          clues: [
+            { value: 100, q: "乜嘢動物最容易跌倒？", a: "狐狸（因為「狐狸」狡猾／腳滑！）", options: ["A. 企鵝", "B. 狐狸（狡猾＝腳滑）", "C. 長頸鹿", "D. 樹懶"] },
+            { value: 200, q: "有邊個月份係有「28 日」嘅呢？", a: "全部 12 個月都有 28 日！", options: ["A. 只有 2 月", "B. 只有閏年 2 月", "C. 全部 12 個月都有！", "D. 單數月份"] },
+            { value: 300, q: "你參加緊 100 米賽跑，喺最後關頭你超越咗「第 2 名」，請問你而家排第幾名？", a: "第 2 名（因為你取代咗原本第 2 名嘅位置！）", options: ["A. 第 1 名", "B. 第 2 名", "C. 第 3 名", "D. 並列第 1"] },
+            { value: 400, q: "一個醫生俾咗 3 粒藥丸你，叫你每半個鐘食 1 粒，請問食晒 3 粒藥丸總共需要幾耐？", a: "1 個鐘（0分食第1粒、30分食第2粒、60分食第3粒）", options: ["A. 1 個半鐘 (90分鐘)", "B. 1 個鐘 (60分鐘)", "C. 45 分鐘", "D. 2 個鐘"] },
+            { value: 500, q: "英文字母 A 至 Z 一共有 26 個，如果 E.T.（外星人）走咗，仲剩低幾多個字母？", a: "21 個（因為 E.T. 搭 UFO 走咗，少咗 E, T, U, F, O 五個！）", options: ["A. 24 個", "B. 22 個", "C. 21 個（連埋 UFO 走！）", "D. 25 個"] }
+          ]
+        },
+        {
+          title: "🍔 飲食大挑戰",
+          clues: [
+            { value: 100, q: "被譽為「果王」嘅係榴槤，咁被譽為「果后」嘅又係邊種熱帶生果？", a: "山竹", options: ["A. 芒果", "B. 山竹", "C. 荔枝", "D. 紅毛丹"] },
+            { value: 200, q: "日本料理入面，我哋點壽司時成日見到「玉子燒」，請問「玉子」即係指邊種食材？", a: "雞蛋", options: ["A. 豆腐", "B. 雞蛋", "C. 魚子", "D. 甜腐皮"] },
+            { value: 300, q: "意大利咖啡「Latte（拿鐵）」同「Cappuccino（卡布奇諾）」，主要都係由 Espresso 加咩沖調而成？", a: "熱鮮奶與奶泡", options: ["A. 朱古力醬", "B. 熱鮮奶與奶泡", "C. 煉奶", "D. 椰漿"] },
+            { value: 400, q: "廣東點心「四大天王」通常係指：蝦餃、燒賣、叉燒包，同埋邊一樣？", a: "蛋撻", options: ["A. 鳳爪", "B. 腸粉", "C. 蛋撻", "D. 蘿蔔糕"] },
+            { value: 500, q: "植物學同營養學上，平時用嚟整薯條嘅「薯仔（馬鈴薯）」，我哋食緊嘅部分係植物嘅「根」定係「莖」？", a: "塊莖（莖部，唔係根！）", options: ["A. 塊根", "B. 塊莖（莖部）", "C. 果實", "D. 種子"] }
+          ]
+        }
+      ]
+    };
+
+    /*************************************************************************
+     * 2. WEB AUDIO SYNTHESIZER (零外部音訊依賴：搶答、加分、Daily Double 音效)
+     *************************************************************************/
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function playSound(type) {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      if (type === 'buzz') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.18);
+        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      } else if (type === 'correct') {
+        [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + i * 0.08);
+          gain.gain.setValueAtTime(0.25, now + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.22);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.08);
+          osc.stop(now + i * 0.08 + 0.22);
+        });
+      } else if (type === 'wrong') {
+        [220, 185].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now + i * 0.18);
+          gain.gain.setValueAtTime(0.25, now + i * 0.18);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.18 + 0.28);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.18);
+          osc.stop(now + i * 0.18 + 0.28);
+        });
+      } else if (type === 'dailydouble') {
+        [440, 554.37, 659.25, 880, 659.25, 880].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(freq, now + i * 0.09);
+          gain.gain.setValueAtTime(0.18, now + i * 0.09);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.09 + 0.14);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.09);
+          osc.stop(now + i * 0.09 + 0.14);
+        });
+      } else if (type === 'tick') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+    }
+
+    /*************************************************************************
+     * 3. GAME STATE & PERSISTENCE (localStorage + WebSocket + BroadcastChannel)
+     *************************************************************************/
+    const STORAGE_KEY = 'kyc_jeopardy_state_v1';
+    const BANK_STORAGE_KEY = 'kyc_jeopardy_bank_v1';
+    const WORKER_URL_KEY = 'kyc_jeopardy_worker_url';
+
+    const TEAM_EMOJIS = ['🔥', '⚡', '🌟', '🚀', '💎', '🌈'];
+
+    let questionBank = loadQuestionBank();
+    let state = loadOrInitState();
+    let currentRole = 'host'; // 'host' or 'player'
+    let activeClueCoords = null; // { cIdx, rIdx, effectiveValue, isDD, mcVisible, ansVisible }
+    let clueTimerInterval = null;
+    let finalTimerInterval = null;
+    let ws = null;
+    let bc = ('BroadcastChannel' in window) ? new BroadcastChannel('kyc_jeopardy_sync') : null;
+
+    function loadQuestionBank() {
+      try {
+        const saved = localStorage.getItem(BANK_STORAGE_KEY);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return JSON.parse(JSON.stringify(DEFAULT_QUESTION_BANK));
+    }
+
+    function generateDailyDoubles(boardSize) {
+      const cols = boardSize === '4x4' ? 4 : 5;
+      const rows = boardSize === '4x4' ? 4 : 5;
+      const count = boardSize === '4x4' ? 1 : 2;
+      const picks = [];
+      while (picks.length < count) {
+        const c = Math.floor(Math.random() * cols);
+        const r = 1 + Math.floor(Math.random() * (rows - 1)); // Prefer $200-$500 rows
+        const key = `${c}-${r}`;
+        if (!picks.includes(key)) picks.push(key);
+      }
+      return picks;
+    }
+
+    function createFreshState(existingRoomCode) {
+      const roomCode = existingRoomCode || String(Math.floor(1000 + Math.random() * 9000));
+      const boardSize = '4x4'; // Default to 4x4 Icebreaker (16 questions)
+      return {
+        roomCode,
+        boardSize, // '4x4' or '5x5'
+        penaltyMode: false, // false = Fun mode (no deduction), true = Penalty mode
+        pickerTeamIdx: 0,
+        teams: [
+          { id: 0, name: '第 1 組', emoji: '🔥', score: 0, finalWager: 200, finalAnswer: '' },
+          { id: 1, name: '第 2 組', emoji: '⚡', score: 0, finalWager: 200, finalAnswer: '' },
+          { id: 2, name: '第 3 組', emoji: '🌟', score: 0, finalWager: 200, finalAnswer: '' },
+          { id: 3, name: '第 4 組', emoji: '🚀', score: 0, finalWager: 200, finalAnswer: '' }
+        ],
+        usedTiles: {}, // { "c-r": { teamIdx: 0 } }
+        dailyDoubles: generateDailyDoubles(boardSize),
+        buzzerOpen: false,
+        buzzerOpenedAt: 0,
+        buzzQueue: [], // [{ teamIdx, playerName, deltaMs, mcChoice }]
+        lockedOutTeams: [], // teams that answered wrong on current clue
+        activeClueInfo: null, // synced info for mobile clients
+        finalPhase: 'NONE' // 'NONE', 'WAGER', 'CLUE'
+      };
+    }
+
+    function loadOrInitState() {
+      const params = new URLSearchParams(window.location.search);
+      const urlRoom = params.get('room');
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (urlRoom) parsed.roomCode = urlRoom;
+          return parsed;
+        }
+      } catch (e) {}
+      return createFreshState(urlRoom);
+    }
+
+    function saveAndSyncState(broadcast = true) {
+      state.rev = (Number(state.rev) || 0) + 1;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {}
+      renderAll();
+      if (broadcast) {
+        const payload = { type: 'STATE_SYNC', state };
+        if (bc) bc.postMessage(payload);
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(payload));
+        }
+      }
+    }
+
+    /*************************************************************************
+     * 4. REAL-TIME MULTIPLAYER SYNC (Cloudflare Durable Objects + BroadcastChannel)
+     *************************************************************************/
+    function initRealtimeSync() {
+      if (bc) {
+        bc.onmessage = (ev) => handleIncomingMessage(ev.data);
+      }
+
+      const savedWorker = localStorage.getItem(WORKER_URL_KEY) || '';
+      const workerInput = document.getElementById('worker-url-input');
+      if (workerInput) workerInput.value = savedWorker;
+
+      connectWebSocket();
+    }
+
+    function connectWebSocket() {
+      if (ws) {
+        try { ws.close(); } catch (e) {}
+      }
+      let baseUrl = localStorage.getItem(WORKER_URL_KEY) || '';
+      if (!baseUrl) {
+        if (!location.hostname || location.protocol === 'file:') {
+          updateConnectionBadge(false, '本機雙視窗同步模式');
+          return;
+        }
+        const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        baseUrl = `${wsProto}//${location.host}`;
+      }
+      baseUrl = baseUrl.replace(/^http/, 'ws').replace(/\/$/, '');
+      const wsUrl = `${baseUrl}/ws?room=${encodeURIComponent(state.roomCode)}&role=${encodeURIComponent(currentRole)}`;
+
+      try {
+        ws = new WebSocket(wsUrl);
+        ws.onopen = () => {
+          updateConnectionBadge(true, '雲端多人連線中');
+          if (currentRole === 'host') {
+            ws.send(JSON.stringify({ type: 'STATE_SYNC', state }));
+            ws.send(JSON.stringify({ type: 'REQUEST_STATE' }));
+          } else {
+            ws.send(JSON.stringify({ type: 'REQUEST_STATE' }));
+          }
+        };
+        ws.onmessage = (ev) => {
+          try {
+            handleIncomingMessage(JSON.parse(ev.data));
+          } catch (e) {}
+        };
+        ws.onclose = () => {
+          updateConnectionBadge(false, '本機/離線同步模式');
+        };
+        ws.onerror = () => {
+          updateConnectionBadge(false, '本機/離線同步模式');
+        };
+      } catch (e) {
+        updateConnectionBadge(false, '本機/離線同步模式');
+      }
+    }
+
+    function updateConnectionBadge(isCloud, text) {
+      const dot = document.getElementById('conn-dot');
+      const label = document.getElementById('nav-conn-mode');
+      if (dot) dot.className = `w-2.5 h-2.5 rounded-full inline-block ${isCloud ? 'bg-[#5CB346]' : 'bg-[#F3C242]'}`;
+      if (label) label.textContent = `(${text})`;
+    }
+
+    function handleIncomingMessage(msg) {
+      if (!msg || !msg.type) return;
+
+      if (msg.type === 'STATE_SYNC' && msg.state) {
+        if ((Number(msg.state.rev) || 0) < (Number(state.rev) || 0)) return;
+        state = msg.state;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+        renderAll();
+      } else if (msg.type === 'REQUEST_STATE' && currentRole === 'host') {
+        saveAndSyncState(true);
+      } else if (msg.type === 'PLAYER_BUZZ') {
+        if (currentRole === 'host') {
+          registerTeamBuzz(msg.teamIdx, msg.playerName || '');
+        }
+      } else if (msg.type === 'PLAYER_MC_CHOICE') {
+        if (currentRole === 'host') {
+          const entry = state.buzzQueue.find(b => b.teamIdx === msg.teamIdx);
+          if (entry) {
+            entry.mcChoice = msg.choice;
+            saveAndSyncState(true);
+            renderClueBuzzQueue();
+          }
+        }
+      } else if (msg.type === 'PLAYER_FINAL_SUBMIT') {
+        if (currentRole === 'host' && state.teams[msg.teamIdx]) {
+          state.teams[msg.teamIdx].finalWager = Math.max(0, parseInt(msg.wager, 10) || 0);
+          state.teams[msg.teamIdx].finalAnswer = msg.answer || '';
+          saveAndSyncState(true);
+          renderFinalTeamsList();
+        }
+      }
+    }
+
+    function sendPlayerAction(payload) {
+      if (bc) bc.postMessage(payload);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(payload));
+      }
+      // Also handle locally if previewing on the same device
+      handleIncomingMessage(payload);
+    }
+
+    /*************************************************************************
+     * 5. UI RENDERING (Host Scoreboard, Jeopardy Grid, Mobile Buzzer)
+     *************************************************************************/
+    function renderAll() {
+      document.getElementById('nav-room-code').textContent = state.roomCode;
+      document.getElementById('mobile-room-badge').textContent = `房號：${state.roomCode}`;
+
+      // Board Size & Penalty Mode Buttons
+      const sizeBtn = document.getElementById('board-size-btn');
+      if (sizeBtn) {
+        sizeBtn.textContent = state.boardSize === '4x4'
+          ? '⚡ 版面：4×4 破冰快閃 (16題)'
+          : '📺 版面：5×5 標準電視版 (25題)';
+      }
+
+      const penBtn = document.getElementById('penalty-mode-btn');
+      if (penBtn) {
+        if (state.penaltyMode) {
+          penBtn.textContent = '🔥 刺激模式：答錯照扣分';
+          penBtn.className = 'pill-btn bg-[#EA6A00] text-white px-3.5 py-1.5 text-xs sm:text-sm border-2 border-white';
+        } else {
+          penBtn.textContent = '😊 歡樂模式：答錯唔扣分';
+          penBtn.className = 'pill-btn bg-[#5CB346] text-white px-3.5 py-1.5 text-xs sm:text-sm border-2 border-white';
+        }
+      }
+
+      const ddLabel = document.getElementById('dd-count-label');
+      if (ddLabel) ddLabel.textContent = state.dailyDoubles.length;
+
+      renderScoreboard();
+      renderJeopardyBoard();
+      renderMobilePlayerView();
+    }
+
+    function renderScoreboard() {
+      const grid = document.getElementById('scoreboard-grid');
+      if (!grid) return;
+
+      if (state.pickerTeamIdx >= state.teams.length) state.pickerTeamIdx = 0;
+      const pickerTeam = state.teams[state.pickerTeamIdx];
+      const banner = document.getElementById('current-picker-banner');
+      if (banner && pickerTeam) {
+        banner.textContent = `請【${pickerTeam.emoji} ${pickerTeam.name}】揀選類別與分數格！`;
+      }
+
+      grid.innerHTML = state.teams.map((t, idx) => {
+        const isPicker = idx === state.pickerTeamIdx;
+        return `
+          <div onclick="setPickerTeam(${idx})" class="cursor-pointer transition-all rounded-3xl p-3.5 border-4 ${isPicker ? 'bg-[#F3C242] text-[#4A3222] border-white scale-[1.03] shadow-lg' : 'bg-white/95 text-[#4A3222] border-white/70 hover:bg-white'}">
+            <div class="flex items-center justify-between text-xs font-black mb-1">
+              <span class="truncate">${t.emoji} ${t.name}</span>
+              ${isPicker ? '<span class="bg-[#E63E7A] text-white px-2 py-0.5 rounded-full text-[10px]">👑 揀題權</span>' : '<span class="text-gray-400 text-[10px]">撳此交權</span>'}
+            </div>
+            <div class="text-2xl sm:text-3xl font-black ${t.score < 0 ? 'text-red-600' : 'text-[#0D74B8]'}">
+              $${t.score.toLocaleString()}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderJeopardyBoard() {
+      const board = document.getElementById('jeopardy-board');
+      if (!board) return;
+
+      const cols = state.boardSize === '4x4' ? 4 : 5;
+      const rows = state.boardSize === '4x4' ? 4 : 5;
+      board.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+      const cats = questionBank.categories.slice(0, cols);
+      let html = '';
+
+      // Row 0: Category Headers
+      cats.forEach((cat) => {
+        html += `
+          <div class="bg-[#0D74B8] text-white border-3 border-white rounded-2xl p-3 text-center flex items-center justify-center min-h-[72px] shadow-md">
+            <span class="font-black text-base sm:text-lg leading-tight">${cat.title}</span>
+          </div>
+        `;
+      });
+
+      // Rows 1..rows: Clue Value Tiles
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const clue = cats[c].clues[r];
+          const key = `${c}-${r}`;
+          const usedInfo = state.usedTiles[key];
+          if (usedInfo) {
+            const winner = usedInfo.teamIdx !== null && state.teams[usedInfo.teamIdx]
+              ? `${state.teams[usedInfo.teamIdx].emoji} ${state.teams[usedInfo.teamIdx].name}`
+              : '✓ 已完成';
+            html += `
+              <div class="jeopardy-tile tile-used p-4 text-center flex flex-col items-center justify-center min-h-[84px]">
+                <span class="text-sm font-black line-through opacity-60">$${clue.value}</span>
+                <span class="text-xs font-bold mt-1">${winner}</span>
+              </div>
+            `;
+          } else {
+            html += `
+              <button onclick="openClueTile(${c}, ${r})" class="jeopardy-tile p-4 text-center flex flex-col items-center justify-center min-h-[84px]">
+                <span class="text-2xl sm:text-4xl font-black tracking-tight">$${clue.value}</span>
+              </button>
+            `;
+          }
+        }
+      }
+
+      board.innerHTML = html;
+    }
+
+    /*************************************************************************
+     * 6. CLUE MODAL, DAILY DOUBLE & LIVE BUZZER LOGIC
+     *************************************************************************/
+    function openClueTile(cIdx, rIdx) {
+      const key = `${cIdx}-${rIdx}`;
+      if (state.usedTiles[key]) return;
+
+      const cat = questionBank.categories[cIdx];
+      const clue = cat.clues[rIdx];
+      const isDD = state.dailyDoubles.includes(key);
+
+      activeClueCoords = {
+        cIdx,
+        rIdx,
+        key,
+        catTitle: cat.title,
+        q: clue.q,
+        a: clue.a,
+        options: clue.options || [],
+        baseValue: clue.value,
+        effectiveValue: clue.value,
+        isDD,
+        mcVisible: false,
+        ansVisible: false
+      };
+
+      document.getElementById('clue-cat-badge').textContent = cat.title;
+      document.getElementById('clue-val-badge').textContent = `$${clue.value}`;
+      document.getElementById('clue-dd-badge').classList.toggle('hidden', !isDD);
+      document.getElementById('clue-modal').classList.remove('hidden');
+
+      if (isDD) {
+        playSound('dailydouble');
+        const picker = state.teams[state.pickerTeamIdx] || state.teams[0];
+        const maxBoardVal = state.boardSize === '4x4' ? 400 : 500;
+        const maxWager = Math.max(picker.score, maxBoardVal * 2);
+
+        document.getElementById('dd-team-prompt').textContent =
+          `只限【${picker.emoji} ${picker.name}】作答！請喺睇題目之前決定押注幾多分：`;
+        document.getElementById('dd-max-wager').textContent = `$${maxWager}`;
+        const wagerInput = document.getElementById('dd-wager-input');
+        wagerInput.max = maxWager;
+        wagerInput.value = Math.min(clue.value * 2, maxWager);
+
+        document.getElementById('dd-wager-panel').classList.remove('hidden');
+        document.getElementById('clue-main-body').classList.add('hidden');
+      } else {
+        document.getElementById('dd-wager-panel').classList.add('hidden');
+        document.getElementById('clue-main-body').classList.remove('hidden');
+        setupAndRevealClueBody(false);
+      }
+    }
+
+    function setMaxDDWager() {
+      const picker = state.teams[state.pickerTeamIdx] || state.teams[0];
+      const maxBoardVal = state.boardSize === '4x4' ? 400 : 500;
+      const maxWager = Math.max(picker.score, maxBoardVal * 2);
+      document.getElementById('dd-wager-input').value = maxWager;
+    }
+
+    function confirmDDWagerAndShowClue() {
+      if (!activeClueCoords) return;
+      const picker = state.teams[state.pickerTeamIdx] || state.teams[0];
+      const maxBoardVal = state.boardSize === '4x4' ? 400 : 500;
+      const maxWager = Math.max(picker.score, maxBoardVal * 2);
+      let wager = parseInt(document.getElementById('dd-wager-input').value, 10) || 100;
+      wager = Math.max(100, Math.min(wager, maxWager));
+
+      activeClueCoords.effectiveValue = wager;
+      document.getElementById('clue-val-badge').textContent = `⚡ 押注 $${wager}`;
+      document.getElementById('dd-wager-panel').classList.add('hidden');
+      document.getElementById('clue-main-body').classList.remove('hidden');
+      setupAndRevealClueBody(true);
+    }
+
+    function setupAndRevealClueBody(isDD) {
+      document.getElementById('clue-question-text').textContent = activeClueCoords.q;
+      document.getElementById('clue-answer-text').textContent = activeClueCoords.a;
+      document.getElementById('clue-answer-box').classList.add('hidden');
+      document.getElementById('clue-mc-container').classList.add('hidden');
+
+      state.buzzQueue = [];
+      state.lockedOutTeams = [];
+
+      if (isDD) {
+        // Daily Double automatically locks in the picking team
+        state.buzzerOpen = false;
+        state.buzzQueue = [{
+          teamIdx: state.pickerTeamIdx,
+          playerName: 'Daily Double 獨享',
+          deltaMs: 0,
+          mcChoice: null
+        }];
+      } else {
+        state.buzzerOpen = true;
+        state.buzzerOpenedAt = Date.now();
+      }
+
+      syncActiveClueToMobile();
+      renderClueBuzzQueue();
+      startClueTimer(15);
+    }
+
+    function syncActiveClueToMobile() {
+      if (!activeClueCoords) {
+        state.activeClueInfo = null;
+      } else {
+        state.activeClueInfo = {
+          catTitle: activeClueCoords.catTitle,
+          effectiveValue: activeClueCoords.effectiveValue,
+          q: activeClueCoords.q,
+          mcVisible: activeClueCoords.mcVisible,
+          options: activeClueCoords.mcVisible ? activeClueCoords.options : []
+        };
+      }
+      saveAndSyncState(true);
+    }
+
+    function openBuzzerForClue() {
+      if (!activeClueCoords) return;
+      state.buzzerOpen = true;
+      state.buzzerOpenedAt = Date.now();
+      state.buzzQueue = [];
+      syncActiveClueToMobile();
+      renderClueBuzzQueue();
+      startClueTimer(15);
+    }
+
+    function registerTeamBuzz(teamIdx, playerName = '') {
+      if (!activeClueCoords) return;
+      if (state.lockedOutTeams.includes(teamIdx)) return;
+      if (state.buzzQueue.some(b => b.teamIdx === teamIdx)) return;
+
+      const now = Date.now();
+      const firstBuzzTime = state.buzzQueue.length === 0 ? now : (state.buzzerOpenedAt + state.buzzQueue[0].rawOffset);
+      const rawOffset = Math.max(0, now - (state.buzzerOpenedAt || now));
+      const deltaMs = state.buzzQueue.length === 0 ? 0 : Math.max(10, rawOffset - state.buzzQueue[0].rawOffset);
+
+      if (state.buzzQueue.length === 0) {
+        playSound('buzz');
+      }
+
+      state.buzzQueue.push({
+        teamIdx,
+        playerName,
+        rawOffset,
+        deltaMs,
+        mcChoice: null
+      });
+
+      saveAndSyncState(true);
+      renderClueBuzzQueue();
+    }
+
+    function renderClueBuzzQueue() {
+      const grid = document.getElementById('clue-team-buzz-grid');
+      const statusLabel = document.getElementById('buzzer-status-label');
+      if (!grid || !activeClueCoords) return;
+
+      const activeBuzz = state.buzzQueue[0];
+      if (activeBuzz && state.teams[activeBuzz.teamIdx]) {
+        const t = state.teams[activeBuzz.teamIdx];
+        const choiceBadge = activeBuzz.mcChoice ? `（已揀：${activeBuzz.mcChoice}）` : '';
+        statusLabel.innerHTML = `🥇 當前作答組別：<span class="text-[#E63E7A] underline">${t.emoji} ${t.name}</span> ${choiceBadge}`;
+      } else {
+        statusLabel.textContent = '🔔 搶答開放中！請團友用手機撳掣，或由主持撳下面組別（快捷鍵 1–6）：';
+      }
+
+      grid.innerHTML = state.teams.map((t, idx) => {
+        const queuePos = state.buzzQueue.findIndex(b => b.teamIdx === idx);
+        const isLockedOut = state.lockedOutTeams.includes(idx);
+
+        if (isLockedOut) {
+          return `
+            <button disabled class="p-2.5 rounded-2xl border-2 border-gray-300 bg-gray-100 text-gray-400 text-xs font-bold">
+              ❌ ${t.emoji} ${t.name} (已答錯)
+            </button>
+          `;
+        }
+
+        if (queuePos === 0) {
+          const b = state.buzzQueue[0];
+          return `
+            <button onclick="selectTeamAsActiveBuzzer(${idx})" class="p-2.5 rounded-2xl border-4 border-[#5CB346] bg-[#5CB346] text-white text-xs sm:text-sm font-black shadow-md scale-105">
+              🥇 ${t.emoji} ${t.name} (作答中)
+              ${b.mcChoice ? `<div class="text-[11px] bg-white text-[#4A3222] rounded px-1 mt-0.5">${b.mcChoice}</div>` : ''}
+            </button>
+          `;
+        } else if (queuePos > 0) {
+          const b = state.buzzQueue[queuePos];
+          return `
+            <button onclick="selectTeamAsActiveBuzzer(${idx})" class="p-2.5 rounded-2xl border-2 border-[#0D74B8] bg-blue-100 text-[#0D74B8] text-xs font-black">
+              #${queuePos + 1} ${t.emoji} ${t.name} (+${(b.deltaMs / 1000).toFixed(2)}s)
+            </button>
+          `;
+        } else {
+          return `
+            <button onclick="registerTeamBuzz(${idx}, '主持指定')" class="p-2.5 rounded-2xl border-2 border-gray-300 bg-white hover:bg-amber-100 text-[#4A3222] text-xs font-black transition">
+              [${idx + 1}] ${t.emoji} ${t.name}
+            </button>
+          `;
+        }
+      }).join('');
+    }
+
+    function selectTeamAsActiveBuzzer(teamIdx) {
+      const existingIdx = state.buzzQueue.findIndex(b => b.teamIdx === teamIdx);
+      if (existingIdx > 0) {
+        const [item] = state.buzzQueue.splice(existingIdx, 1);
+        state.buzzQueue.unshift(item);
+      } else if (existingIdx === -1) {
+        state.buzzQueue.unshift({ teamIdx, playerName: '主持指定', rawOffset: 0, deltaMs: 0, mcChoice: null });
+      }
+      saveAndSyncState(true);
+      renderClueBuzzQueue();
+    }
+
+    function toggleClueMC() {
+      if (!activeClueCoords) return;
+      activeClueCoords.mcVisible = !activeClueCoords.mcVisible;
+      const container = document.getElementById('clue-mc-container');
+      container.classList.toggle('hidden', !activeClueCoords.mcVisible);
+
+      if (activeClueCoords.mcVisible) {
+        container.innerHTML = (activeClueCoords.options || []).map((opt) => `
+          <div class="bg-white border-2 border-[#0D74B8] rounded-2xl px-4 py-3 font-black text-base sm:text-xl text-[#4A3222] shadow-sm">
+            ${opt}
+          </div>
+        `).join('');
+      }
+      syncActiveClueToMobile();
+    }
+
+    function toggleRevealAnswer() {
+      if (!activeClueCoords) return;
+      const box = document.getElementById('clue-answer-box');
+      box.classList.toggle('hidden');
+    }
+
+    function judgeActiveTeam(isCorrect) {
+      if (!activeClueCoords) return;
+      let targetTeamIdx = state.buzzQueue.length > 0 ? state.buzzQueue[0].teamIdx : state.pickerTeamIdx;
+      const team = state.teams[targetTeamIdx];
+      if (!team) return;
+
+      const pts = activeClueCoords.effectiveValue;
+
+      if (isCorrect) {
+        playSound('correct');
+        team.score += pts;
+        state.pickerTeamIdx = targetTeamIdx; // Winner gets control of the board
+        state.usedTiles[activeClueCoords.key] = { teamIdx: targetTeamIdx };
+        closeClueModalAndCleanup();
+      } else {
+        playSound('wrong');
+        if (state.penaltyMode || activeClueCoords.isDD) {
+          team.score -= pts;
+        }
+        state.lockedOutTeams.push(targetTeamIdx);
+        state.buzzQueue.shift();
+
+        // If Daily Double or all teams locked out, reveal answer or allow host to finish
+        if (activeClueCoords.isDD || state.lockedOutTeams.length >= state.teams.length) {
+          document.getElementById('clue-answer-box').classList.remove('hidden');
+        }
+        saveAndSyncState(true);
+        renderClueBuzzQueue();
+      }
+    }
+
+    function markClueFinishedAndClose() {
+      if (!activeClueCoords) return;
+      state.usedTiles[activeClueCoords.key] = { teamIdx: null };
+      closeClueModalAndCleanup();
+    }
+
+    function closeClueModalWithoutUsed() {
+      closeClueModalAndCleanup();
+    }
+
+    function closeClueModalAndCleanup() {
+      clearInterval(clueTimerInterval);
+      activeClueCoords = null;
+      state.buzzerOpen = false;
+      state.buzzQueue = [];
+      state.lockedOutTeams = [];
+      state.activeClueInfo = null;
+      document.getElementById('clue-modal').classList.add('hidden');
+      saveAndSyncState(true);
+    }
+
+    function startClueTimer(seconds) {
+      clearInterval(clueTimerInterval);
+      let remaining = seconds;
+      const timerEl = document.getElementById('clue-timer-text');
+      if (timerEl) timerEl.textContent = `${remaining}s`;
+
+      clueTimerInterval = setInterval(() => {
+        remaining--;
+        if (timerEl) timerEl.textContent = `${Math.max(0, remaining)}s`;
+        if (remaining <= 5 && remaining > 0) playSound('tick');
+        if (remaining <= 0) {
+          clearInterval(clueTimerInterval);
+        }
+      }, 1000);
+    }
+
+    /*************************************************************************
+     * 7. MOBILE PLAYER BUZZER VIEW LOGIC
+     *************************************************************************/
+    function renderMobilePlayerView() {
+      const sel = document.getElementById('mobile-team-select');
+      if (!sel) return;
+
+      const savedTeamIdx = parseInt(localStorage.getItem('kyc_jeopardy_my_team') || '0', 10);
+      const validTeamIdx = savedTeamIdx < state.teams.length ? savedTeamIdx : 0;
+
+      sel.innerHTML = state.teams.map((t, idx) =>
+        `<option value="${idx}" ${idx === validTeamIdx ? 'selected' : ''}>${t.emoji} ${t.name}</option>`
+      ).join('');
+
+      const myTeam = state.teams[validTeamIdx] || state.teams[0];
+      document.getElementById('mobile-team-name-display').textContent = `${myTeam.emoji} ${myTeam.name}`;
+      document.getElementById('mobile-team-score-display').textContent = `$${myTeam.score.toLocaleString()}`;
+
+      const btn = document.getElementById('mobile-giant-buzzer');
+      const icon = document.getElementById('mobile-buzzer-icon');
+      const title = document.getElementById('mobile-buzzer-title');
+      const sub = document.getElementById('mobile-buzzer-sub');
+      const banner = document.getElementById('mobile-clue-Banner');
+      const mcPanel = document.getElementById('mobile-mc-panel');
+      const finalPanel = document.getElementById('mobile-final-panel');
+
+      // Check Final Jeopardy mode
+      if (state.finalPhase !== 'NONE') {
+        finalPanel.classList.remove('hidden');
+        const finalCat = state.finalCategory || questionBank.finalJeopardy.category;
+        document.getElementById('mobile-final-cat').textContent = `類別：${finalCat}`;
+      } else {
+        finalPanel.classList.add('hidden');
+      }
+
+      if (state.finalPhase === 'CLUE' && state.finalQuestion) {
+        banner.textContent = `🌟 ${state.finalQuestion}`;
+      } else if (state.activeClueInfo) {
+        banner.textContent = `【${state.activeClueInfo.catTitle} · $${state.activeClueInfo.effectiveValue}】${state.activeClueInfo.q}`;
+      } else {
+        banner.textContent = '請望住大螢幕題目，搶答開放時即撳下面大掣！';
+      }
+
+      const myRank = state.buzzQueue.findIndex(b => b.teamIdx === validTeamIdx);
+      const isLocked = state.lockedOutTeams.includes(validTeamIdx);
+
+      if (isLocked) {
+        btn.className = 'w-56 h-56 sm:w-64 sm:h-64 rounded-full border-8 border-white shadow-xl flex flex-col items-center justify-center gap-2 bg-gray-400 text-white';
+        icon.textContent = '❌';
+        title.textContent = '本題已答錯';
+        sub.textContent = '請等待下一題';
+      } else if (myRank === 0) {
+        btn.className = 'w-56 h-56 sm:w-64 sm:h-64 rounded-full border-8 border-white shadow-2xl flex flex-col items-center justify-center gap-2 bg-[#5CB346] text-white scale-105';
+        icon.textContent = '🥇';
+        title.textContent = '搶到第 1 名！';
+        sub.textContent = '請即刻開聲向主持作答！';
+      } else if (myRank > 0) {
+        const delta = (state.buzzQueue[myRank].deltaMs / 1000).toFixed(2);
+        btn.className = 'w-56 h-56 sm:w-64 sm:h-64 rounded-full border-8 border-white shadow-xl flex flex-col items-center justify-center gap-2 bg-[#0D74B8] text-white';
+        icon.textContent = '⚡';
+        title.textContent = `排第 ${myRank + 1} 候補`;
+        sub.textContent = `慢咗 +${delta} 秒`;
+      } else {
+        btn.className = 'w-56 h-56 sm:w-64 sm:h-64 rounded-full border-8 border-white shadow-2xl flex flex-col items-center justify-center gap-2 bg-[#E63E7A] text-white buzzer-ready-anim';
+        icon.textContent = '🔔';
+        title.textContent = '立即搶答！';
+        sub.textContent = '撳我鎖定組別搶答權';
+      }
+
+      // Render Mobile MC options if visible
+      if (state.activeClueInfo && state.activeClueInfo.mcVisible && state.activeClueInfo.options) {
+        mcPanel.classList.remove('hidden');
+        document.getElementById('mobile-mc-grid').innerHTML = state.activeClueInfo.options.map((opt) => `
+          <button onclick="sendMobileMCChoice('${opt.replace(/'/g, "\\'")}')" class="w-full text-left bg-amber-50 hover:bg-amber-100 border-2 border-[#0D74B8] rounded-xl px-3 py-2 font-black text-xs sm:text-sm text-[#4A3222]">
+            ${opt}
+          </button>
+        `).join('');
+      } else {
+        mcPanel.classList.add('hidden');
+      }
+    }
+
+    function updateMobilePlayerProfile() {
+      const sel = document.getElementById('mobile-team-select');
+      if (sel) localStorage.setItem('kyc_jeopardy_my_team', sel.value);
+      renderMobilePlayerView();
+    }
+
+    function handleMobileBuzz() {
+      const teamIdx = parseInt(document.getElementById('mobile-team-select').value || '0', 10);
+      const playerName = document.getElementById('mobile-player-name').value.trim();
+      if (navigator.vibrate) navigator.vibrate(80);
+      playSound('buzz');
+      sendPlayerAction({
+        type: 'PLAYER_BUZZ',
+        teamIdx,
+        playerName
+      });
+    }
+
+    function sendMobileMCChoice(choice) {
+      const teamIdx = parseInt(document.getElementById('mobile-team-select').value || '0', 10);
+      sendPlayerAction({
+        type: 'PLAYER_MC_CHOICE',
+        teamIdx,
+        choice
+      });
+    }
+
+    function submitMobileFinalJeopardy() {
+      const teamIdx = parseInt(document.getElementById('mobile-team-select').value || '0', 10);
+      const wager = parseInt(document.getElementById('mobile-final-wager').value || '0', 10);
+      const answer = document.getElementById('mobile-final-answer').value.trim();
+      sendPlayerAction({
+        type: 'PLAYER_FINAL_SUBMIT',
+        teamIdx,
+        wager,
+        answer
+      });
+      const st = document.getElementById('mobile-final-status');
+      st.classList.remove('hidden');
+      setTimeout(() => st.classList.add('hidden'), 3000);
+    }
+
+    /*************************************************************************
+     * 8. FINAL JEOPARDY & WINNER PODIUM
+     *************************************************************************/
+    function startFinalJeopardy() {
+      state.finalPhase = 'WAGER';
+      state.finalCategory = questionBank.finalJeopardy.category;
+      state.finalQuestion = '';
+      document.getElementById('final-category-title').textContent = questionBank.finalJeopardy.category;
+      document.getElementById('final-question-text').textContent = questionBank.finalJeopardy.q;
+      document.getElementById('final-answer-reveal').textContent = `✅ 標準答案：${questionBank.finalJeopardy.a}`;
+      document.getElementById('final-clue-box').classList.add('hidden');
+      document.getElementById('btn-reveal-final-clue').classList.remove('hidden');
+
+      renderFinalTeamsList();
+      openModal('final-modal');
+      saveAndSyncState(true);
+    }
+
+    function revealFinalClueOnScreen() {
+      state.finalPhase = 'CLUE';
+      state.finalQuestion = questionBank.finalJeopardy.q;
+      document.getElementById('btn-reveal-final-clue').classList.add('hidden');
+      document.getElementById('final-clue-box').classList.remove('hidden');
+      saveAndSyncState(true);
+
+      clearInterval(finalTimerInterval);
+      let rem = 30;
+      const badge = document.getElementById('final-timer-badge');
+      badge.textContent = `⏱️ ${rem}s`;
+      finalTimerInterval = setInterval(() => {
+        rem--;
+        badge.textContent = `⏱️ ${Math.max(0, rem)}s`;
+        if (rem <= 5 && rem > 0) playSound('tick');
+        if (rem <= 0) clearInterval(finalTimerInterval);
+      }, 1000);
+    }
+
+    function renderFinalTeamsList() {
+      const container = document.getElementById('final-teams-list');
+      if (!container) return;
+
+      container.innerHTML = state.teams.map((t, idx) => `
+        <div class="bg-gray-50 border-2 border-gray-200 rounded-2xl p-4 flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <span class="font-black text-base">${t.emoji} ${t.name}</span>
+            <span class="font-black text-lg text-[#0D74B8]">現分：$${t.score.toLocaleString()}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[11px] font-bold text-gray-500">押注分數 ($)：</label>
+              <input type="number" value="${t.finalWager || 0}" onchange="updateTeamFinalWager(${idx}, this.value)" class="w-full border-2 border-gray-300 rounded-xl px-2.5 py-1 font-black text-sm text-[#E63E7A]" />
+            </div>
+            <div>
+              <label class="text-[11px] font-bold text-gray-500">提交答案：</label>
+              <input type="text" value="${t.finalAnswer || ''}" placeholder="未填寫" onchange="updateTeamFinalAnswer(${idx}, this.value)" class="w-full border-2 border-gray-300 rounded-xl px-2.5 py-1 font-bold text-sm" />
+            </div>
+          </div>
+          <div class="flex gap-2 mt-1">
+            <button onclick="settleFinalTeam(${idx}, true)" class="pill-btn flex-1 bg-[#5CB346] text-white py-1.5 text-xs">
+              ✅ 答啱 (+$${t.finalWager || 0})
+            </button>
+            <button onclick="settleFinalTeam(${idx}, false)" class="pill-btn flex-1 bg-[#E63E7A] text-white py-1.5 text-xs">
+              ❌ 答錯 (-$${t.finalWager || 0})
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateTeamFinalWager(idx, val) {
+      state.teams[idx].finalWager = Math.max(0, parseInt(val, 10) || 0);
+      saveAndSyncState(true);
+      renderFinalTeamsList();
+    }
+
+    function updateTeamFinalAnswer(idx, val) {
+      state.teams[idx].finalAnswer = val;
+      saveAndSyncState(true);
+    }
+
+    function settleFinalTeam(idx, isCorrect) {
+      const t = state.teams[idx];
+      const wager = Math.max(0, parseInt(t.finalWager, 10) || 0);
+      if (isCorrect) {
+        playSound('correct');
+        t.score += wager;
+      } else {
+        playSound('wrong');
+        t.score -= wager;
+      }
+      saveAndSyncState(true);
+      renderFinalTeamsList();
+    }
+
+    function showWinnerPodium() {
+      closeModal('final-modal');
+      state.finalPhase = 'NONE';
+      playSound('correct');
+
+      const sorted = [...state.teams].sort((a, b) => b.score - a.score);
+      const medals = ['🥇 冠軍', '🥈 亞軍', '🥉 季軍', '🏅 優異', '🏅 優異', '🏅 優異'];
+
+      document.getElementById('podium-rankings').innerHTML = sorted.map((t, i) => `
+        <div class="flex items-center justify-between p-4 rounded-2xl border-3 ${i === 0 ? 'bg-white border-[#E63E7A] shadow-lg scale-[1.02]' : 'bg-white/85 border-white'}">
+          <div class="flex items-center gap-3">
+            <span class="font-black text-base sm:text-lg text-[#E63E7A]">${medals[i]}</span>
+            <span class="font-black text-lg sm:text-xl text-[#4A3222]">${t.emoji} ${t.name}</span>
+          </div>
+          <span class="font-black text-xl sm:text-2xl text-[#0D74B8]">$${t.score.toLocaleString()}</span>
+        </div>
+      `).join('');
+
+      openModal('podium-modal');
+      saveAndSyncState(true);
+    }
+
+    /*************************************************************************
+     * 9. HOST CONTROLS, SETTINGS, QR CODE & KEYBOARD SHORTCUTS
+     *************************************************************************/
+    function setPickerTeam(idx) {
+      state.pickerTeamIdx = idx;
+      saveAndSyncState(true);
+    }
+
+    function toggleBoardSize() {
+      state.boardSize = state.boardSize === '4x4' ? '5x5' : '4x4';
+      state.dailyDoubles = generateDailyDoubles(state.boardSize);
+      saveAndSyncState(true);
+    }
+
+    function togglePenaltyMode() {
+      state.penaltyMode = !state.penaltyMode;
+      saveAndSyncState(true);
+    }
+
+    function toggleRoleView() {
+      currentRole = currentRole === 'host' ? 'player' : 'host';
+      document.getElementById('host-view').classList.toggle('hidden', currentRole !== 'host');
+      document.getElementById('player-view').classList.toggle('hidden', currentRole !== 'player');
+      document.getElementById('role-switch-btn').textContent =
+        currentRole === 'host' ? '📱 切換手機搶答端' : '🖥️ 返回主持大螢幕';
+      connectWebSocket();
+      renderAll();
+    }
+
+    function openModal(id) {
+      if (id === 'qr-modal') renderQRCodeModal();
+      if (id === 'host-modal') renderHostTeamsEditor();
+      if (id === 'editor-modal') {
+        document.getElementById('bank-json-textarea').value = JSON.stringify(questionBank, null, 2);
+      }
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function renderHostTeamsEditor() {
+      const container = document.getElementById('host-teams-editor');
+      if (!container) return;
+      container.innerHTML = state.teams.map((t, idx) => `
+        <div class="bg-gray-50 border-2 border-gray-200 rounded-2xl p-3 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 flex-1">
+            <span class="text-xl">${t.emoji}</span>
+            <input type="text" value="${t.name}" onchange="renameTeam(${idx}, this.value)" class="w-full border border-gray-300 rounded-lg px-2 py-1 font-black text-xs" />
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="adjustTeamScore(${idx}, -100)" class="pill-btn bg-red-100 text-red-700 px-2.5 py-1 text-xs">-100</button>
+            <input type="number" value="${t.score}" onchange="setTeamExactScore(${idx}, this.value)" class="w-20 text-center border border-gray-300 rounded-lg py-1 font-black text-xs text-[#0D74B8]" />
+            <button onclick="adjustTeamScore(${idx}, 100)" class="pill-btn bg-green-100 text-green-700 px-2.5 py-1 text-xs">+100</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renameTeam(idx, newName) {
+      if (state.teams[idx] && newName.trim()) {
+        state.teams[idx].name = newName.trim();
+        saveAndSyncState(true);
+      }
+    }
+
+    function adjustTeamScore(idx, delta) {
+      if (state.teams[idx]) {
+        state.teams[idx].score += delta;
+        saveAndSyncState(true);
+        renderHostTeamsEditor();
+      }
+    }
+
+    function setTeamExactScore(idx, val) {
+      if (state.teams[idx]) {
+        state.teams[idx].score = parseInt(val, 10) || 0;
+        saveAndSyncState(true);
+        renderHostTeamsEditor();
+      }
+    }
+
+    function addNewTeam() {
+      if (state.teams.length >= 6) return alert('最多支援 6 組！');
+      const idx = state.teams.length;
+      state.teams.push({
+        id: idx,
+        name: `第 ${idx + 1} 組`,
+        emoji: TEAM_EMOJIS[idx % TEAM_EMOJIS.length],
+        score: 0,
+        finalWager: 200,
+        finalAnswer: ''
+      });
+      saveAndSyncState(true);
+      renderHostTeamsEditor();
+    }
+
+    function removeLastTeam() {
+      if (state.teams.length <= 2) return alert('最少需要保留 2 組！');
+      state.teams.pop();
+      if (state.pickerTeamIdx >= state.teams.length) state.pickerTeamIdx = 0;
+      saveAndSyncState(true);
+      renderHostTeamsEditor();
+    }
+
+    function unlockAllTiles() {
+      state.usedTiles = {};
+      state.dailyDoubles = generateDailyDoubles(state.boardSize);
+      saveAndSyncState(true);
+      closeModal('host-modal');
+    }
+
+    function confirmResetGame() {
+      if (!confirm('確定要重開新局嗎？所有組別分數同已答格仔將會重置。')) return;
+      closeModal('podium-modal');
+      const rev = Number(state.rev) || 0;
+      const roomCode = state.roomCode;
+      state = createFreshState(roomCode);
+      state.rev = rev;
+      saveAndSyncState(true);
+    }
+
+    function saveWorkerUrlAndReconnect() {
+      const val = document.getElementById('worker-url-input').value.trim();
+      localStorage.setItem(WORKER_URL_KEY, val);
+      connectWebSocket();
+      alert('已儲存連線設定並嘗試重新連線！');
+    }
+
+    function renderQRCodeModal() {
+      const joinUrl = new URL(window.location.href);
+      joinUrl.searchParams.set('room', state.roomCode);
+      joinUrl.searchParams.set('role', 'player');
+      const urlStr = joinUrl.toString();
+
+      document.getElementById('qr-room-pin').textContent = state.roomCode;
+      document.getElementById('qr-url-text').textContent = urlStr;
+
+      const box = document.getElementById('qr-code-box');
+      box.innerHTML = '';
+      if (typeof qrcode === 'function') {
+        const qr = qrcode(0, 'M');
+        qr.addData(urlStr);
+        qr.make();
+        box.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2 });
+      } else {
+        box.innerHTML = `<div class="p-4 text-xs font-bold">請直接分享網址：<br>${urlStr}</div>`;
+      }
+    }
+
+    function copyJoinLink() {
+      const urlStr = document.getElementById('qr-url-text').textContent;
+      navigator.clipboard.writeText(urlStr).then(() => alert('已複製團友搶答連結！'));
+    }
+
+    /*************************************************************************
+     * 10. QUESTION BANK EDITOR & AI PROMPT GENERATOR
+     *************************************************************************/
+    function copyAIPrompt() {
+      const promptText = `請幫我為團契破冰遊戲《智奪風雲 Jeopardy!》設計一套全新嘅廣東話題庫，並嚴格輸出為以下 JSON 格式（包含 1 題 finalJeopardy 同埋 5 個 categories，每個 category 有 5 題 $100-$500 嘅 clues，每題附設 4 個選擇題 options 救場用）：\n\n` +
+        JSON.stringify(DEFAULT_QUESTION_BANK, null, 2);
+      navigator.clipboard.writeText(promptText).then(() => {
+        alert('✅ 已複製 AI 出題 Prompt！你可以直接貼去 Gemini 或 ChatGPT 生成新題庫 JSON。');
+      });
+    }
+
+    function saveCustomBankFromTextarea() {
+      try {
+        const parsed = JSON.parse(document.getElementById('bank-json-textarea').value);
+        if (!parsed.categories || parsed.categories.length < 4) {
+          return alert('JSON 格式錯誤：最少需要 4 個 categories！');
+        }
+        questionBank = parsed;
+        localStorage.setItem(BANK_STORAGE_KEY, JSON.stringify(questionBank));
+        closeModal('editor-modal');
+        renderAll();
+        alert('✅ 已成功套用新題庫！');
+      } catch (e) {
+        alert('JSON 語法有誤，請檢查括號或引號：' + e.message);
+      }
+    }
+
+    function restoreDefaultBank() {
+      if (!confirm('確定要還原預設破冰題庫？')) return;
+      questionBank = JSON.parse(JSON.stringify(DEFAULT_QUESTION_BANK));
+      localStorage.removeItem(BANK_STORAGE_KEY);
+      document.getElementById('bank-json-textarea').value = JSON.stringify(questionBank, null, 2);
+      renderAll();
+    }
+
+    function exportBankJSON() {
+      const blob = new Blob([JSON.stringify(questionBank, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'jeopardy-question-bank.json';
+      a.click();
+    }
+
+    // Keyboard shortcuts for Host on Clue Modal
+    window.addEventListener('keydown', (e) => {
+      if (!activeClueCoords) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        openBuzzerForClue();
+      } else if (e.key >= '1' && e.key <= '6') {
+        const idx = parseInt(e.key, 10) - 1;
+        if (idx < state.teams.length) {
+          registerTeamBuzz(idx, '快捷鍵');
+        }
+      }
+    });
+
+    // Auto-switch to Player Mobile View if URL has ?role=player
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('role') === 'player') {
+        currentRole = 'player';
+        document.getElementById('host-view').classList.add('hidden');
+        document.getElementById('player-view').classList.remove('hidden');
+        document.getElementById('role-switch-btn').textContent = '🖥️ 返回主持大螢幕';
+      }
+      initRealtimeSync();
+      renderAll();
+    });
+  </script>
+
+
+</body>
+</html>
